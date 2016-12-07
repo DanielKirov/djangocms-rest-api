@@ -9,6 +9,8 @@ from djangocms_rest_api.serializers import (
     PageSerializer, PlaceHolderSerializer, BasePluginSerializer, get_serializer, get_serializer_class
 )
 from djangocms_rest_api.views.utils import QuerysetMixin
+from rest_framework.response import Response
+from django.template import RequestContext
 
 
 class PageViewSet(QuerysetMixin, viewsets.ReadOnlyModelViewSet):
@@ -39,6 +41,14 @@ class PluginViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = BasePluginSerializer
     queryset = CMSPlugin.objects.all()
 
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        context = RequestContext(request)
+        self.request = request
+        context['request'] = request
+        serializer = self.get_serializer(instance, context=context)
+        return Response(serializer.data)
+
     def get_object(self):
         obj = super(PluginViewSet, self).get_object()
         instance, plugin = obj.get_plugin_instance()
@@ -51,6 +61,7 @@ class PluginViewSet(viewsets.ReadOnlyModelViewSet):
             # Do not use model here, since it replace base serializer with quire limited created from model
             return get_serializer_class(plugin=obj.get_plugin_class())
         return super(PluginViewSet, self).get_serializer_class()
+
 
 
 

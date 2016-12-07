@@ -82,12 +82,13 @@ class PluginListSerializer(ListSerializer):
         raise NotImplementedError('Readonly for now')
 
     def to_representation(self, data):
-
         iterable = data.all() if isinstance(data, models.Manager) else data
         resp = []
         for item in iterable:
             instance, plugin = item.get_plugin_instance()
-            serializer = get_serializer(instance, plugin=plugin)
+            kwargs = {'context': self.context,
+                      'request': self.context['request']}
+            serializer = get_serializer(instance, plugin=plugin, context=self.context)
             resp.append(serializer.data)
 
         return resp
@@ -100,13 +101,25 @@ class BasePluginSerializer(serializers.ModelSerializer):
     plugin_data = serializers.SerializerMethodField()
     inlines = serializers.SerializerMethodField()
     children = serializers.SerializerMethodField()
+    rendered = serializers.SerializerMethodField()
 
     class Meta:
         model = CMSPlugin
         list_serializer_class = PluginListSerializer
         fields = [
             'id', 'placeholder', 'parent', 'position', 'language', 'plugin_type', 'creation_date', 'changed_date',
-            'plugin_data', 'inlines', 'children']
+            'plugin_data', 'inlines', 'children', 'rendered']
+
+    def get_rendered(self, obj):
+        from django.template import RequestContext
+        from cms.plugin_rendering import ContentRenderer
+        request = self._context.get('request', {})
+        renderer = ContentRenderer(request)
+        context = RequestContext(request)
+        # Avoid errors if plugin require a request object
+        # when rendering.
+        context['request'] = request
+        return renderer.render_plugin(obj, context)
 
     def get_plugin_data(self, obj):
 
@@ -262,3 +275,8 @@ def get_serializer(instance, plugin=None, model=None, *args, **kwargs):
     if 'read_only' not in kwargs:
         kwargs['read_only'] = True
     return serializer_class(instance, *args, **kwargs)
+
+
+
+
+
