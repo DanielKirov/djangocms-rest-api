@@ -6,7 +6,8 @@ from django.contrib.sites.shortcuts import get_current_site
 from rest_framework import viewsets
 
 from djangocms_rest_api.serializers import (
-    PageSerializer, PlaceHolderSerializer, BasePluginSerializer, get_serializer, get_serializer_class
+    PageSerializer, PlaceHolderSerializer, BasePluginSerializer, get_serializer, get_serializer_class,
+    RecursivePageSerializer
 )
 from djangocms_rest_api.views.utils import QuerysetMixin
 from rest_framework.response import Response
@@ -23,6 +24,18 @@ class PageViewSet(QuerysetMixin, viewsets.ReadOnlyModelViewSet):
             return Page.objects.drafts().on_site(site=site).distinct()
         else:
             return Page.objects.public().on_site(site=site).distinct()
+
+
+class RecursivePageViewSet(QuerysetMixin, viewsets.ReadOnlyModelViewSet):
+    serializer_class = RecursivePageSerializer
+    queryset = Page.objects.public().filter(is_home=True)
+
+    def get_queryset(self):
+        site = get_current_site(self.request)
+        if self.request.user.is_staff:
+            return Page.objects.drafts().on_site(site=site).distinct().filter(is_home=True)
+        else:
+            return Page.objects.public().on_site(site=site).distinct().filter(is_home=True)
 
 
 class PlaceHolderViewSet(viewsets.ReadOnlyModelViewSet):

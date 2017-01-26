@@ -10,8 +10,28 @@ from rest_framework import serializers
 from rest_framework.serializers import ListSerializer
 from djangocms_rest_api.serializers.utils import RequestSerializer
 from djangocms_rest_api.serializers.mapping import serializer_class_mapping
+from rest_framework_recursive.fields import RecursiveField
 
 serializer_cache = {}
+
+class RecursivePageSerializer(RequestSerializer, serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+    children = serializers.ListField(child=RecursiveField(), source='get_children')
+    page_title = serializers.SerializerMethodField()
+    menu_title = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Page
+        fields = ['id', 'url', 'page_title', 'menu_title', 'children']
+
+    def get_url(self, obj):
+        return reverse('api:page-detail', args=(obj.pk,))
+
+    def get_page_title(self, obj):
+        return obj.get_page_title()
+
+    def get_menu_title(self, obj):
+        return obj.get_menu_title()
 
 
 class PageSerializer(RequestSerializer, serializers.ModelSerializer):
