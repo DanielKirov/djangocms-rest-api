@@ -19,10 +19,12 @@ class RecursivePageSerializer(RequestSerializer, serializers.ModelSerializer):
     children = serializers.ListField(child=RecursiveField(), source='get_children')
     page_title = serializers.SerializerMethodField()
     menu_title = serializers.SerializerMethodField()
+    slug = serializers.SerializerMethodField()
+    path = serializers.SerializerMethodField()
 
     class Meta:
         model = Page
-        fields = ['id', 'url', 'page_title', 'menu_title', 'children']
+        fields = ['id', 'url', 'slug', 'path', 'page_title', 'menu_title', 'children']
 
     def get_url(self, obj):
         return reverse('api:page-detail', args=(obj.pk,))
@@ -32,6 +34,12 @@ class RecursivePageSerializer(RequestSerializer, serializers.ModelSerializer):
 
     def get_menu_title(self, obj):
         return obj.get_menu_title()
+
+    def get_slug(self, obj):
+        return obj.get_slug()
+
+    def get_path(self, obj):
+        return obj.get_path()
 
 
 class PageSerializer(RequestSerializer, serializers.ModelSerializer):
