@@ -94,9 +94,6 @@ class BasePluginSerializer(serializers.ModelSerializer):
         return renderer.render_plugin(obj, context)
 
     def get_plugin_data(self, obj):
-
-        import pdb; pdb.set_trace()
-
         instance, plugin = obj.get_plugin_instance()
         model = getattr(plugin, 'model', None)
         if model:
@@ -172,7 +169,7 @@ class PlaceHolderSerializer(RequestSerializer, serializers.ModelSerializer):
 
     class Meta:
         model = Placeholder
-        fields = ['id', 'slot', 'page']
+        fields = ['id', 'slot', 'plugins', 'page']
         depth = 2
 
     def get_plugins(self, obj):
